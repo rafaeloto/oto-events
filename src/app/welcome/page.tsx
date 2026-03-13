@@ -5,13 +5,18 @@ import Icon from "@/components/atoms/Icon";
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import CompanyCode from "./_components/CompanyCode";
 
 type WelcomePageProps = {
-  searchParams: Promise<{ redirect_url?: string }>;
+  searchParams: Promise<{
+    redirect_url?: string;
+    companyCode?: string
+  }>;
 };
 
 const WelcomePage = async ({ searchParams }: WelcomePageProps) => {
-  const { redirect_url } = await searchParams;
+  const { redirect_url, companyCode: companyCodeParam } = await searchParams;
   const redirectUrl = redirect_url || "/";
 
   const { userId } = await auth();
@@ -20,11 +25,10 @@ const WelcomePage = async ({ searchParams }: WelcomePageProps) => {
     redirect(redirectUrl);
   }
 
+  const companyId = (await cookies()).get("companyId")?.value;
+
   return (
     <div className="relative flex h-full flex-col md:grid md:grid-cols-2">
-      {/* Background image for mobile */}
-      {/* <div className="absolute inset-0 bg-[url('/welcome-mobile.png')] bg-cover bg-center opacity-10 md:hidden" /> */}
-
       {/* Info and button */}
       <div className="relative z-10 mx-auto flex h-full max-w-[550px] flex-col justify-center p-8">
         <div className="mb-8 flex items-center gap-3 md:mb-6">
@@ -42,22 +46,28 @@ const WelcomePage = async ({ searchParams }: WelcomePageProps) => {
           QR codes para monitorar sua participação e oferecer a visualização detalhada
           dos seus eventos.
         </p>
-        {/* Signin button */}
         <div className="flex w-full flex-col gap-4">
-          <SignInButton forceRedirectUrl={redirectUrl} mode="modal">
-            <Button>
-              <Icon name="LogIn" className="mr-2" />
-              Entrar
-            </Button>
-          </SignInButton>
+          {companyId ? (
+            <>
+              {/* Signin button */}
+              <SignInButton forceRedirectUrl={redirectUrl} mode="modal">
+                <Button>
+                  <Icon name="LogIn" className="mr-2" />
+                  Entrar
+                </Button>
+              </SignInButton>
 
-          {/* Signup button */}
-          <SignUpButton forceRedirectUrl={redirectUrl} mode="modal">
-            <Button variant="outline">
-              <Icon name="UserPlus" className="mr-2" />
-              Cadastrar
-            </Button>
-          </SignUpButton>
+              {/* Signup button */}
+              <SignUpButton forceRedirectUrl={redirectUrl} mode="modal">
+                <Button variant="outline">
+                  <Icon name="UserPlus" className="mr-2" />
+                  Cadastrar
+                </Button>
+              </SignUpButton>
+            </>
+          ) : (
+            <CompanyCode companyCode={companyCodeParam || ""} />
+          )}
         </div>
       </div>
 
